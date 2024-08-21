@@ -339,6 +339,7 @@ impl Signaller {
                         p::OutgoingMessage::Welcome { peer_id } => {
                             self.set_status(meta, &peer_id);
                             self.start_session();
+                            self.obj().emit_by_name::<()>("welcome", &[&peer_id]);
                         }
                         p::OutgoingMessage::PeerStatusChanged(p::PeerStatus {
                             meta,

@@ -103,6 +103,12 @@ impl prelude::ObjectInterface for Signallable {
                         bool::static_type(),
                     ])
                     .build(),
+
+                Signal::builder("welcome")
+                    .param_types([
+                        str::static_type(),
+                    ])
+                    .build(),
                 /**
                  * GstRSWebRTCSignallableIface::producer-removed:
                  * @self: The object implementing #GstRSWebRTCSignallableIface
