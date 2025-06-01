@@ -950,10 +950,14 @@ impl Codecs {
                     CODECS
                         .iter()
                         .find(|codec| {
-                            codec
+                            let found = codec
                                 .encoding_info
                                 .as_ref()
-                                .is_some_and(|_| codec.caps.can_intersect(&caps))
+                                .is_some_and(|_| codec.caps.can_intersect(&caps));
+                            if found {
+                                println!("FOUND: Codec name: {}", codec.name);
+                            }
+                            found
                         })
                         .and_then(|codec| {
                             /* Assign a payload type to the codec */
@@ -984,10 +988,15 @@ pub fn has_raw_caps(caps: &gst::Caps) -> bool {
 }
 
 pub fn cleanup_codec_caps(mut caps: gst::Caps) -> gst::Caps {
+    println!("INSIDE cleanup_codec_caps\n");
     assert!(caps.is_fixed());
+    println!("FIXED\n");
 
     if let Some(s) = caps.make_mut().structure_mut(0) {
+        let name = &s.name().as_str();
+        println!("cleanup_codec_caps: {name}\n");
         if ["video/x-h264", "video/x-h265"].contains(&s.name().as_str()) {
+            println!("REMOVING CODEC_DATA!!!\n");
             s.remove_fields(["codec_data"]);
         } else if ["video/x-vp8", "video/x-vp9"].contains(&s.name().as_str()) {
             s.remove_fields(["profile"]);

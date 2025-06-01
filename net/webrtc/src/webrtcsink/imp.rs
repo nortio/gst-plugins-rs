@@ -801,9 +801,9 @@ fn configure_encoder(enc: &gst::Element, start_bitrate: u32) {
             }
             "amfh264enc" => {
                 // ultra low latency = 1
-                enc.set_property_from_str("usage", "1");
+/*                 enc.set_property_from_str("usage", "1");
                 enc.set_property("bitrate", start_bitrate / 1000);
-                enc.set_property("gop-size", 2560i32);
+                enc.set_property("gop-size", 2560i32); */
             }
             "vaapih264enc" | "vaapivp8enc" => {
                 enc.set_property("bitrate", start_bitrate / 1000);
@@ -3581,6 +3581,9 @@ impl BaseWebRTCSink {
             elements.push(make_converter_for_video_caps(&input_caps, &codec)?);
 
             let capsfilter = make_element("capsfilter", Some("raw_capsfilter"))?;
+            
+            gst::debug!(CAT, imp=self, "capsfilter: {capsfilter:#?}");
+
             elements.push(capsfilter.clone());
 
             capsfilter
@@ -3595,6 +3598,7 @@ impl BaseWebRTCSink {
         );
 
         gst::debug!(CAT, imp = self, "Running discovery pipeline");
+        
         let elements_slice = &elements.iter().collect::<Vec<_>>();
         pipe.0.add_many(elements_slice).unwrap();
         gst::Element::link_many(elements_slice)
@@ -3611,10 +3615,20 @@ impl BaseWebRTCSink {
             ),
         );
 
+        pipe.0.debug_to_dot_file_with_ts(
+            gst::DebugGraphDetails::all(),
+            "before-payload",
+        );
+
         let PayloadChain {
             payloader,
             encoding_chain,
         } = payload_chain_builder.build(&pipe.0, &encoding_chain_src)?;
+
+        pipe.0.debug_to_dot_file_with_ts(
+            gst::DebugGraphDetails::all(),
+            "after-payload",
+        );
 
         if let Some(ref enc) = encoding_chain.encoder {
             self.obj().emit_by_name::<bool>(
@@ -3770,6 +3784,10 @@ impl BaseWebRTCSink {
             }
 
             let sink_caps = discovery_info.caps.clone();
+            
+            println!("output_caps: {:#?}", output_caps);
+
+            println!("sink_caps: {:#?}", sink_caps);
 
             let is_video = match sink_caps.structure(0).unwrap().name().as_str() {
                 "video/x-raw" => true,
@@ -4010,6 +4028,10 @@ impl BaseWebRTCSink {
             #[strong]
             discovery_info,
             async move {
+                println!("discovery_info: {discovery_info:#?}\n");
+                println!("stream_name_clone: {stream_name_clone:#?}\n");
+                println!("codecs: {codecs:#?}\n");
+
                 let (fut, handle) = futures::future::abortable(this.lookup_caps(
                     discovery_info.clone(),
                     stream_name_clone.clone(),
